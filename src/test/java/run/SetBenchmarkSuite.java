@@ -1,7 +1,9 @@
 package run;
 
 import lib.AvgTimeBenchmark;
-import org.assertj.core.data.Percentage;
+import lib.ReportGenerator;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -19,81 +21,121 @@ public class SetBenchmarkSuite {
 
     private static abstract class CommonSteps {
 
+        protected ReportGenerator report;
+
+        @BeforeEach
+        void setUp() {
+            report = new ReportGenerator(getSet().getClass());
+        }
+
+        @AfterEach
+        void after() {
+            report.write();
+        }
+
         abstract Set<Object> getSet();
 
         @ParameterizedTest
         @CsvSource({
-            "0,         10",
-            "0,         100",
-            "0,         1000",
-            "10,        10",
-            "100,       100",
-            "1000,      1000",
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
+            "0,         10,          1000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void setAddTest(int warmUp, int tests) {
+        void setAdd(int warmUp, int tests, int n) {
             var set = getSet();
+            var data = TestObject.randomList(n);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    set.clear();
+                    set.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> TestObject.random())
-                .testCase(set::add)
+                .testCase((in, ctx) -> {
+                    ctx.jitAssert(set.add(in));
+                    return set;
+                })
                 .build();
 
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("setAdd", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void setRemoveTest(int warmUp, int tests, int n) {
+        void setRemove(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
-            var stack = new LinkedList<>(data);
-            Collections.shuffle(stack);
+            var stack = new LinkedList<>();
             var set = getSet();
-            set.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    stack.clear();
+                    stack.addAll(data);
+                    Collections.shuffle(stack);
+                    set.clear();
+                    set.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> stack.pop())
-                .testCase(set::remove)
+                .testCase((in, ctx) -> set.remove(in))
                 .build();
 
             var result = benchmark.run();
 
-            assertThat(set.size()).isCloseTo(n - warmUp - tests, Percentage.withPercentage(0.5));
+            assertThat(set.size()).isEqualTo(n - 1);
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("setRemove", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void setFullBrowseTest(int warmUp, int tests, int n) {
+        void setFullBrowse(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var set = getSet();
-            set.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    set.clear();
+                    set.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> {
+                .testCase((in, ctx) -> {
                     var iterator = set.iterator();
                     while (iterator.hasNext()) {
-                        iterator.next();
+                        ctx.jitAssert(iterator.next());
                     }
                     return iterator;
                 })
@@ -102,35 +144,44 @@ public class SetBenchmarkSuite {
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("setFullBrowse", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void setExistsTest(int warmUp, int tests, int n) {
+        void setExists(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
-            var stack = new LinkedList<>(data);
-            Collections.shuffle(stack);
+            var stack = new LinkedList<>();
             var set = getSet();
-            set.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    stack.clear();
+                    stack.addAll(data);
+                    Collections.shuffle(stack);
+                    set.clear();
+                    set.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> stack.pop())
-                .testCase(set::contains)
+                .testCase((in, ctx) -> set.contains(in))
                 .build();
 
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("setExists", warmUp, tests, n, result);
         }
     }
 

@@ -7,7 +7,7 @@ import java.util.Random;
 import java.util.StringJoiner;
 import java.util.UUID;
 
-public class TestObject {
+public class TestObject implements Comparable<TestObject> {
 
     private final static Random rn = new Random();
 
@@ -33,6 +33,11 @@ public class TestObject {
             list.add(random());
         }
         return list;
+    }
+
+    @Override
+    public int compareTo(TestObject o) {
+        return testString.compareTo(o.testString);
     }
 
     @Override

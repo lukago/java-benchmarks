@@ -1,43 +1,59 @@
 package run;
 
 import lib.AvgTimeBenchmark;
-import org.assertj.core.data.Percentage;
+import lib.ReportGenerator;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.Deque;
-import java.util.Random;
+import java.util.LinkedList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DequeBenchmarkSuite {
 
-    private static final Random rnd = new Random();
-
     private static abstract class CommonSteps {
+
+        protected ReportGenerator report;
+
+        @BeforeEach
+        void setUp() {
+            report = new ReportGenerator(getDeque().getClass());
+        }
+
+        @AfterEach
+        void after() {
+            report.write();
+        }
 
         abstract Deque<Object> getDeque();
 
         @ParameterizedTest
         @CsvSource({
-            "0,         10",
-            "0,         100",
-            "0,         1000",
-            "10,        10",
-            "100,       100",
-            "1000,      1000",
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
+            "0,         10,          1000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void queueAddBegin(int warmUp, int tests) {
+        void queueAddBegin(int warmUp, int tests, int n) {
             var queue = getDeque();
+            queue.addAll(TestObject.randomList(n));
             var benchmark = new AvgTimeBenchmark.Builder<>()
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> TestObject.random())
-                .testCase(in -> {
+                .testCase((in, ctx) -> {
                     queue.addFirst(in);
                     return queue;
                 })
@@ -46,25 +62,34 @@ public class DequeBenchmarkSuite {
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("queueAddBegin", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
-            "0,         10",
-            "0,         100",
-            "0,         1000",
-            "10,        10",
-            "100,       100",
-            "1000,      1000",
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
+            "0,         10,          1000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void queueAddEnd(int warmUp, int tests) {
+        void queueAddEnd(int warmUp, int tests, int n) {
             var queue = getDeque();
+            var data = TestObject.randomList(n);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    queue.clear();
+                    queue.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> TestObject.random())
-                .testCase(in -> {
+                .testCase((in, ctx) -> {
                     queue.add(in);
                     return queue;
                 })
@@ -73,110 +98,140 @@ public class DequeBenchmarkSuite {
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("queueAddEnd", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void queueRemoveRandomTest(int warmUp, int tests, int n) {
+        void queueRemoveRandom(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
-            var stack = new LinkedList<>(data);
-            Collections.shuffle(stack);
+            var stack = new LinkedList<>();
             var queue = getDeque();
-            queue.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    stack.clear();
+                    stack.addAll(data);
+                    Collections.shuffle(stack);
+                    queue.clear();
+                    queue.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> stack.pop())
-                .testCase(queue::remove)
+                .testCase((in, ctx) -> queue.remove())
                 .build();
 
             var result = benchmark.run();
 
-            assertThat(queue.size()).isCloseTo(n - warmUp - tests, Percentage.withPercentage(0.5));
+            assertThat(queue.size()).isEqualTo(n - 1);
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("queueRemoveRandom", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void queueRemoveEndTest(int warmUp, int tests, int n) {
+        void queueRemoveEnd(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var queue = getDeque();
-            queue.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    queue.clear();
+                    queue.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> queue.remove(queue.size() - 1))
+                .testCase((in, ctx) -> queue.removeLast())
                 .build();
 
             var result = benchmark.run();
 
-            assertThat(queue.size()).isCloseTo(n - warmUp - tests, Percentage.withPercentage(0.5));
+            assertThat(queue.size()).isEqualTo(n - 1);
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("queueRemoveEnd", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void queueRemoveBeginTest(int warmUp, int tests, int n) {
+        void queueRemoveBegin(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var queue = getDeque();
-            queue.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    queue.clear();
+                    queue.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> queue.remove(0))
+                .testCase((in, ctx) -> queue.removeFirst())
                 .build();
 
             var result = benchmark.run();
 
-            assertThat(queue.size()).isCloseTo(n - warmUp - tests, Percentage.withPercentage(0.5));
+            assertThat(queue.size()).isEqualTo(n - 1);
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("queueRemoveBegin", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void queueFullBrowseIteratorTest(int warmUp, int tests, int n) {
+        void queueFullBrowseIterator(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var queue = getDeque();
-            queue.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    queue.clear();
+                    queue.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> {
+                .testCase((in, ctx) -> {
                     var iterator = queue.iterator();
                     while (iterator.hasNext()) {
-                        iterator.next();
+                        ctx.jitAssert(iterator.next());
                     }
                     return iterator;
                 })
@@ -185,38 +240,44 @@ public class DequeBenchmarkSuite {
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("queueFullBrowseIterator", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void queueFullBrowseForLoopTest(int warmUp, int tests, int n) {
+        void queueFullBrowseForLoop(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var queue = getDeque();
-            queue.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    queue.clear();
+                    queue.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> {
-                    Object lookUp = null;
-                    for (int i = 0; i < queue.size(); i++) {
-                        lookUp = queue.poll();
+                .testCase((in, ctx) -> {
+                    for (int i = 0; i < queue.size() - 1; i++) {
+                        ctx.jitAssert(queue.pop());
                     }
-                    return lookUp;
+                    return queue;
                 })
                 .build();
 
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("queueFullBrowseForLoop", warmUp, tests, n, result);
         }
     }
 

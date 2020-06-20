@@ -1,7 +1,9 @@
 package run;
 
 import lib.AvgTimeBenchmark;
-import org.assertj.core.data.Percentage;
+import lib.ReportGenerator;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -20,24 +22,45 @@ public class ListBenchmarkSuite {
 
     private static abstract class CommonSteps {
 
+        protected ReportGenerator report;
+
+        @BeforeEach
+        void setUp() {
+            report = new ReportGenerator(getList().getClass());
+        }
+
+        @AfterEach
+        void after() {
+            report.write();
+        }
+
         abstract List<Object> getList();
 
         @ParameterizedTest
         @CsvSource({
-            "0,         10",
-            "0,         100",
-            "0,         1000",
-            "10,        10",
-            "100,       100",
-            "1000,      1000",
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
+            "0,         10,          1000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void listAddBegin(int warmUp, int tests) {
+        void listAddBegin(int warmUp, int tests, int n) {
             var list = getList();
+            var data = TestObject.randomList(n);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    list.clear();
+                    list.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> TestObject.random())
-                .testCase(in -> {
+                .testCase((in, ctx) -> {
                     list.add(0, in);
                     return list;
                 })
@@ -46,25 +69,34 @@ public class ListBenchmarkSuite {
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("listAddBegin", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
-            "0,         10",
-            "0,         100",
-            "0,         1000",
-            "10,        10",
-            "100,       100",
-            "1000,      1000",
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
+            "0,         10,          1000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void listAddEnd(int warmUp, int tests) {
+        void listAddEnd(int warmUp, int tests, int n) {
             var list = getList();
+            var data = TestObject.randomList(n);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    list.clear();
+                    list.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> TestObject.random())
-                .testCase(in -> {
+                .testCase((in, ctx) -> {
                     list.add(in);
                     return list;
                 })
@@ -73,26 +105,35 @@ public class ListBenchmarkSuite {
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("listAddEnd", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
-            "0,         10",
-            "0,         100",
-            "0,         1000",
-            "10,        10",
-            "100,       100",
-            "1000,      1000",
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
+            "0,         10,          1000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void listAddRandom(int warmUp, int tests) {
+        void listAddRandom(int warmUp, int tests, int n) {
             var list = getList();
+            var data = TestObject.randomList(n);
             var input = TestObject.random();
             var benchmark = new AvgTimeBenchmark.Builder<Integer, List<?>>()
+                .beforeTestCallback(() -> {
+                    list.clear();
+                    list.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> rnd.nextInt(list.size()))
-                .testCase(in -> {
+                .testCase((in, ctx) -> {
                     list.add(in, input);
                     return list;
                 })
@@ -101,110 +142,140 @@ public class ListBenchmarkSuite {
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("listAddRandom", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void listRemoveRandomTest(int warmUp, int tests, int n) {
+        void listRemoveRandom(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
-            var stack = new LinkedList<>(data);
-            Collections.shuffle(stack);
+            var stack = new LinkedList<>();
             var list = getList();
-            list.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    stack.clear();
+                    stack.addAll(data);
+                    Collections.shuffle(stack);
+                    list.clear();
+                    list.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
                 .dataProvider(i -> stack.pop())
-                .testCase(list::remove)
+                .testCase((in, ctx) -> list.remove(in))
                 .build();
 
             var result = benchmark.run();
 
-            assertThat(list.size()).isCloseTo(n - warmUp - tests, Percentage.withPercentage(0.5));
+            assertThat(list.size()).isEqualTo(n - 1);
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("listRemoveRandom", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void listRemoveEndTest(int warmUp, int tests, int n) {
+        void listRemoveEnd(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var list = getList();
-            list.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    list.clear();
+                    list.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> list.remove(list.size() - 1))
+                .testCase((in, ctx) -> list.remove(list.size() - 1))
                 .build();
 
             var result = benchmark.run();
 
-            assertThat(list.size()).isCloseTo(n - warmUp - tests, Percentage.withPercentage(0.5));
+            assertThat(list.size()).isEqualTo(n - 1);
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("listRemoveEnd", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void listRemoveBeginTest(int warmUp, int tests, int n) {
+        void listRemoveBegin(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var list = getList();
-            list.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    list.clear();
+                    list.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> list.remove(0))
+                .testCase((in, ctx) -> list.remove(0))
                 .build();
 
             var result = benchmark.run();
 
-            assertThat(list.size()).isCloseTo(n - warmUp - tests, Percentage.withPercentage(0.5));
+            assertThat(list.size()).isEqualTo(n - 1);
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("listRemoveBegin", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void listFullBrowseIteratorTest(int warmUp, int tests, int n) {
+        void listFullBrowseIterator(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var list = getList();
-            list.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    list.clear();
+                    list.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> {
+                .testCase((in, ctx) -> {
                     var iterator = list.iterator();
                     while (iterator.hasNext()) {
-                        iterator.next();
+                        ctx.jitAssert(iterator.next());
                     }
                     return iterator;
                 })
@@ -213,38 +284,44 @@ public class ListBenchmarkSuite {
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("listFullBrowseIterator", warmUp, tests, n, result);
         }
 
         @ParameterizedTest
         @CsvSource({
+            "0,         10,          10",
+            "100,       10,          10",
+            "0,         10,          100",
+            "100,       10,          100",
             "0,         10,          1000",
-            "0,         100 ,        1000",
-            "0,         1000 ,       1000",
-            "10,        10 ,         1000",
-            "100,       100 ,        1000",
-            "1000,      1000 ,       2000",
+            "100,       10,          1000",
+            "0,         10,          10000",
+            "100,       10,          10000",
+            "0,         10,          100000",
+            "100,       10,          100000",
         })
-        void listFullBrowseForLoopTest(int warmUp, int tests, int n) {
+        void listFullBrowseForLoop(int warmUp, int tests, int n) {
             var data = TestObject.randomList(n);
             var list = getList();
-            list.addAll(data);
             var benchmark = new AvgTimeBenchmark.Builder<>()
+                .beforeTestCallback(() -> {
+                    list.clear();
+                    list.addAll(data);
+                })
                 .warmUpIterations(warmUp)
                 .testCaseIterations(tests)
-                .testCase(in -> {
-                    Object lookUp = null;
-                    for (int i = 0; i < list.size(); i++) {
-                        lookUp = list.get(i);
+                .testCase((in, ctx) -> {
+                    for (Object o : list) {
+                        ctx.jitAssert(o);
                     }
-                    return lookUp;
+                    return list;
                 })
                 .build();
 
             var result = benchmark.run();
 
             assertThat(result).isNotNull();
-            System.out.println(result);
+            report.addEntry("listFullBrowseForLoop", warmUp, tests, n, result);
         }
     }
 

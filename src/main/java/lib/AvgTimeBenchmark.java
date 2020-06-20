@@ -1,101 +1,138 @@
 package lib;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static java.lang.Double.NaN;
 import static java.time.temporal.ChronoUnit.NANOS;
 
-public class AvgTimeBenchmark<IN, OUT> implements Benchmark {
+public class AvgTimeBenchmark<ITER_IN, ITER_OUT> implements Benchmark {
+
+    private static final Random rn = new Random();
 
     private final int warmUpIterations;
     private final int testCaseIterations;
-    private final Function<IN, OUT> testCase;
-    private final Function<Integer, IN> dataProvider;
-    private final Runnable afterWarmUpCallback;
+    private final BiFunction<ITER_IN, IterationContext, ITER_OUT> testCase;
+    private final Function<Integer, ITER_IN> dataProvider;
+    private final Runnable beforeTestCallback;
     private final List<Duration> times;
 
     private AvgTimeBenchmark(int warmUpIterations,
         int testCaseIterations,
-        Function<IN, OUT> testCase,
-        Function<Integer, IN> dataProvider,
-        Runnable afterWarmUpCallback) {
+        BiFunction<ITER_IN, IterationContext, ITER_OUT> testCase,
+        Function<Integer, ITER_IN> dataProvider,
+        Runnable beforeTestCallback) {
         Objects.requireNonNull(testCase);
         this.warmUpIterations = warmUpIterations;
         this.testCaseIterations = testCaseIterations;
         this.testCase = testCase;
         this.dataProvider = dataProvider;
-        this.afterWarmUpCallback = afterWarmUpCallback;
+        this.beforeTestCallback = beforeTestCallback;
         this.times = new ArrayList<>();
     }
 
     @Override
     public Duration run() {
         for (int i = 0; i < warmUpIterations; i++) {
+            beforeTestCallback.run();
             warmUpIteration(i);
         }
 
-        afterWarmUpCallback.run();
-
         for (int i = 0; i < testCaseIterations; i++) {
+            beforeTestCallback.run();
             iteration(i);
         }
 
-        double avgNanos = times.stream()
+        double avg = times.stream()
             .mapToLong(duration -> duration.get(NANOS))
             .average()
-            .orElse(Double.NaN);
+            .orElse(NaN);
 
-        return Duration.ofNanos(Math.round(avgNanos));
+        return Duration.ofNanos(Math.round(avg));
     }
 
     private void iteration(Integer iteration) {
-        IN input = dataProvider.apply(iteration);
+        IterationContext context = new IterationContext();
+        ITER_IN input = dataProvider.apply(iteration);
         System.gc();
 
-        long start = Instant.now().getNano();
-        Object result = testCase.apply(input);
-        long time = System.nanoTime() - start;
+        long start = System.nanoTime();
+        Object result = testCase.apply(input, context);
+        long time = System.nanoTime() - start - context.getTotalPauseNanos();
 
         times.add(Duration.ofNanos(time));
-        jitAssert(result);
+        context.jitAssertNoPause(result);
     }
 
     private void warmUpIteration(Integer iteration) {
-        Object result = testCase.apply(dataProvider.apply(iteration));
-        jitAssert(result);
+        IterationContext context = new IterationContext();
+        Object result = testCase.apply(dataProvider.apply(iteration), context);
+        context.jitAssertNoPause(result);
     }
 
+    public static class IterationContext {
 
-    /**
-     * Do some operations on tested objects so it will prevent JIT from eliminating
-     * useless computations.
-     *
-     * @param result object to prevent JIT optimizations
-     */
-    public void jitAssert(Object result) {
-        if (result instanceof Collection && result.hashCode() - ((Collection) result).size() == 123345) {
-            System.out.println("[DEBUG] JIT assertion for collection");
-        } else {
-            if ((result.hashCode() + result.toString()).equals("123345")) {
-                System.out.println("[DEBUG] JIT assertion for object");
+        private final List<Duration> pauseDurations;
+
+        public IterationContext() {
+            this.pauseDurations = new ArrayList<>();
+        }
+
+        public void jitAssert(Object result) {
+            long start = System.nanoTime();
+            consume(result);
+            long time = System.nanoTime() - start;
+            pauseDurations.add(Duration.ofNanos(time));
+        }
+
+        public void jitAssertNoPause(Object result) {
+            consume(result);
+        }
+
+        /**
+         * Do some operations on tested objects so it will prevent JIT from eliminating
+         * useless computations.
+         *
+         * @param result object to prevent JIT optimizations
+         */
+        private void consume(Object result) {
+            if (result == null) {
+                System.out.println("[DEBUG] Null result from test");
+            } else {
+                if (result instanceof Collection &&
+                    result.hashCode() - ((Collection) result).size() == rn.nextInt(200000)) {
+                    System.out.println("[DEBUG] JIT assertion for collection");
+                } else {
+                    if ((result.hashCode() == rn.nextInt(200000))) {
+                        System.out.println("[DEBUG] JIT assertion for object");
+                    }
+                }
             }
+        }
+
+        public long getTotalPauseNanos() {
+            double pauseSum = pauseDurations.stream()
+                .mapToLong(duration -> duration.get(NANOS))
+                .sum();
+            return Math.round(pauseSum);
         }
     }
 
     public static class Builder<I, O> {
         private int warmUpIterations;
         private int testCaseIterations;
-        private Function<I, O> testCase;
+        private BiFunction<I, IterationContext, O> testCase;
         private Function<Integer, I> dataProvider;
-        private Runnable afterWarmUpCallback;
+        private Runnable beforeTestCallback;
 
         public Builder() {
-            this.afterWarmUpCallback = () -> { };
+            this.beforeTestCallback = () -> { };
             this.dataProvider = i -> null;
         }
 
@@ -109,7 +146,7 @@ public class AvgTimeBenchmark<IN, OUT> implements Benchmark {
             return this;
         }
 
-        public Builder<I, O> testCase(Function<I, O> testCase) {
+        public Builder<I, O> testCase(BiFunction<I, IterationContext, O> testCase) {
             this.testCase = testCase;
             return this;
         }
@@ -119,8 +156,8 @@ public class AvgTimeBenchmark<IN, OUT> implements Benchmark {
             return this;
         }
 
-        public Builder<I, O> afterWarmUpCallback(Runnable afterWarmUpCallback) {
-            this.afterWarmUpCallback = afterWarmUpCallback;
+        public Builder<I, O> beforeTestCallback(Runnable beforeTestCallback) {
+            this.beforeTestCallback = beforeTestCallback;
             return this;
         }
 
@@ -129,7 +166,7 @@ public class AvgTimeBenchmark<IN, OUT> implements Benchmark {
                 testCaseIterations,
                 testCase,
                 dataProvider,
-                afterWarmUpCallback);
+                beforeTestCallback);
         }
     }
 }

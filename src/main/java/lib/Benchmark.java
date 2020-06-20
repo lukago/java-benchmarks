@@ -6,6 +6,7 @@ public interface Benchmark {
 
     /**
      * Benchmarks time and returns result.
+     *
      * @return benchmark result
      */
     Duration run();
