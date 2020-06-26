@@ -30,6 +30,8 @@ public class LRUCache<K, V> implements Cache<K, V> {
         var res = cache.get(key);
         if (res == null) {
             missed++;
+        } else {
+            cache(key, res);
         }
         return Optional.ofNullable(res);
     }

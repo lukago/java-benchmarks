@@ -249,7 +249,7 @@ public class CacheBenchmarkSuite {
         }
 
         private Integer randomGaussian() {
-            long index = Math.round(rnd.nextGaussian() * DB_SIZE/4.0 + DB_SIZE/2.0);
+            long index = Math.round(rnd.nextGaussian() * DB_SIZE/15 + DB_SIZE/2.0);
             if (index > DB_SIZE) {
                 return DB_SIZE;
             }
@@ -264,7 +264,7 @@ public class CacheBenchmarkSuite {
     class FIFOBenchmark extends CommonSteps {
         @Override
         Cache<Integer, String> getCache() {
-            return new FIFOCache<>(DB_SIZE);
+            return new FIFOCache<>(DB_SIZE / 4);
         }
     }
 
@@ -272,7 +272,7 @@ public class CacheBenchmarkSuite {
     class LFRUBenchmark extends CommonSteps {
         @Override
         Cache<Integer, String> getCache() {
-            return new LFRUCache<>(DB_SIZE);
+            return new LFRUCache<>(DB_SIZE / 4);
         }
     }
 
@@ -280,7 +280,7 @@ public class CacheBenchmarkSuite {
     class LRUBenchmark extends CommonSteps {
         @Override
         Cache<Integer, String> getCache() {
-            return new LRUCache<>(DB_SIZE / 2);
+            return new LRUCache<>(DB_SIZE / 4);
         }
     }
 
@@ -288,7 +288,7 @@ public class CacheBenchmarkSuite {
     class RRenchmark extends CommonSteps {
         @Override
         Cache<Integer, String> getCache() {
-            return new RRCache<>(DB_SIZE / 2);
+            return new RRCache<>(DB_SIZE / 4);
         }
     }
 }
