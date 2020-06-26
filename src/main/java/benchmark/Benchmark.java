@@ -1,4 +1,4 @@
-package lib;
+package benchmark;
 
 import java.time.Duration;
 

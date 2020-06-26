@@ -2,279 +2,279 @@
 warmupIterations = 0
 testIterations = 10
 collectionSize = 10
-avgTime = PT0.000033874S
+avgTime = PT0.000015638S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 10
-avgTime = PT0.000022439S
+avgTime = PT0.000012103S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 100
-avgTime = PT0.000028652S
+avgTime = PT0.000012653S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 100
-avgTime = PT0.000018958S
+avgTime = PT0.000011417S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 1000
-avgTime = PT0.000017209S
+avgTime = PT0.000011895S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 1000
-avgTime = PT0.000017438S
+avgTime = PT0.000010514S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 10000
-avgTime = PT0.000018515S
+avgTime = PT0.000011876S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 10000
-avgTime = PT0.000015354S
+avgTime = PT0.000013606S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 100000
-avgTime = PT0.000013375S
+avgTime = PT0.000011985S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 100000
-avgTime = PT0.00001282S
+avgTime = PT0.000011686S
 testedMethod = 'setAdd'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 10
-avgTime = PT0.000021569S
+avgTime = PT0.00003203S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 10
-avgTime = PT0.0000166S
+avgTime = PT0.000027378S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 100
-avgTime = PT0.000029721S
+avgTime = PT0.000021559S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 100
-avgTime = PT0.000023823S
+avgTime = PT0.000021653S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 1000
-avgTime = PT0.00008646S
+avgTime = PT0.000105153S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 1000
-avgTime = PT0.000085889S
+avgTime = PT0.000090821S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 10000
-avgTime = PT0.000576619S
+avgTime = PT0.000973655S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 10000
-avgTime = PT0.000626443S
+avgTime = PT0.000945401S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 100000
-avgTime = PT0.005773357S
+avgTime = PT0.013084329S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 100000
-avgTime = PT0.005617971S
+avgTime = PT0.013339685S
 testedMethod = 'setFullBrowse'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 10
-avgTime = PT0.000015411S
+avgTime = PT0.000012207S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 10
-avgTime = PT0.000012032S
+avgTime = PT0.000012478S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 100
-avgTime = PT0.000013746S
+avgTime = PT0.000010806S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 100
-avgTime = PT0.000013502S
+avgTime = PT0.000009798S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 1000
-avgTime = PT0.000013555S
+avgTime = PT0.000011136S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 1000
-avgTime = PT0.000015494S
+avgTime = PT0.0000107S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 10000
-avgTime = PT0.000014063S
+avgTime = PT0.000010415S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 10000
-avgTime = PT0.000012505S
+avgTime = PT0.000011906S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 100000
-avgTime = PT0.000010179S
+avgTime = PT0.000011311S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 100000
-avgTime = PT0.000009506S
+avgTime = PT0.000011117S
 testedMethod = 'setExists'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 10
-avgTime = PT0.000023615S
+avgTime = PT0.00001266S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 10
-avgTime = PT0.000020237S
+avgTime = PT0.000012124S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 100
-avgTime = PT0.000021605S
+avgTime = PT0.000012394S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 100
-avgTime = PT0.00002044S
+avgTime = PT0.000015004S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 1000
-avgTime = PT0.000016803S
+avgTime = PT0.000011771S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 1000
-avgTime = PT0.000017293S
+avgTime = PT0.000011256S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 10000
-avgTime = PT0.00001912S
+avgTime = PT0.000010378S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 10000
-avgTime = PT0.000010614S
+avgTime = PT0.000011557S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 0
 testIterations = 10
 collectionSize = 100000
-avgTime = PT0.000010765S
+avgTime = PT0.000011327S
 testedMethod = 'setRemove'
 }
 {
 warmupIterations = 100
 testIterations = 10
 collectionSize = 100000
-avgTime = PT0.000010799S
+avgTime = PT0.000010988S
 testedMethod = 'setRemove'
 }

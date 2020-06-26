@@ -1,9 +1,10 @@
-package lib;
+package report;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,14 +13,14 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.util.stream.Collectors.toList;
 
-public class ReportGenerator {
+public class CollectionReportGenerator {
 
-    private final Class<?> testedClass;
     private final List<Entry> entries;
+    private final String filename;
 
-    public ReportGenerator(Class<?> testedClass) {
-        this.testedClass = testedClass;
+    public CollectionReportGenerator(Class<?> testedClass, Instant createdAt) {
         this.entries = new ArrayList<>();
+        this.filename = "results/collection/benchmark" + testedClass.getSimpleName() + createdAt + ".txt";
     }
 
     public void addEntry(String method, int warmup, int test, int n, Duration duration) {
@@ -27,9 +28,9 @@ public class ReportGenerator {
     }
 
     public void write() {
-        String filename = "benchmark" + testedClass.getSimpleName() + ".txt";
-        List<String> entriesStr = entries.stream().map(Entry::toString).collect(toList());
         try {
+            Files.createDirectories(Paths.get("results/collection"));
+            List<String> entriesStr = entries.stream().map(Entry::toString).collect(toList());
             Files.write(Paths.get(filename), entriesStr, defaultCharset(), APPEND, CREATE);
         } catch (IOException e) {
             throw new RuntimeException("IO error", e);

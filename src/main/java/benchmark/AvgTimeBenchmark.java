@@ -1,4 +1,4 @@
-package lib;
+package benchmark;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -21,19 +21,22 @@ public class AvgTimeBenchmark<ITER_IN, ITER_OUT> implements Benchmark {
     private final BiFunction<ITER_IN, IterationContext, ITER_OUT> testCase;
     private final Function<Integer, ITER_IN> dataProvider;
     private final Runnable beforeTestCallback;
+    private final Runnable afterWarmupCallback;
     private final List<Duration> times;
 
     private AvgTimeBenchmark(int warmUpIterations,
         int testCaseIterations,
         BiFunction<ITER_IN, IterationContext, ITER_OUT> testCase,
         Function<Integer, ITER_IN> dataProvider,
-        Runnable beforeTestCallback) {
+        Runnable beforeTestCallback,
+        Runnable afterWarmupCallback) {
         Objects.requireNonNull(testCase);
         this.warmUpIterations = warmUpIterations;
         this.testCaseIterations = testCaseIterations;
         this.testCase = testCase;
         this.dataProvider = dataProvider;
         this.beforeTestCallback = beforeTestCallback;
+        this.afterWarmupCallback = afterWarmupCallback;
         this.times = new ArrayList<>();
     }
 
@@ -43,6 +46,8 @@ public class AvgTimeBenchmark<ITER_IN, ITER_OUT> implements Benchmark {
             beforeTestCallback.run();
             warmUpIteration(i);
         }
+
+        afterWarmupCallback.run();
 
         for (int i = 0; i < testCaseIterations; i++) {
             beforeTestCallback.run();
@@ -66,12 +71,15 @@ public class AvgTimeBenchmark<ITER_IN, ITER_OUT> implements Benchmark {
         Object result = testCase.apply(input, context);
         long time = System.nanoTime() - start - context.getTotalPauseNanos();
 
-        times.add(Duration.ofNanos(time));
+        if (!context.excludeResult) {
+            times.add(Duration.ofNanos(time));
+        }
         context.jitAssertNoPause(result);
     }
 
     private void warmUpIteration(Integer iteration) {
         IterationContext context = new IterationContext();
+        context.isWarmup = true;
         Object result = testCase.apply(dataProvider.apply(iteration), context);
         context.jitAssertNoPause(result);
     }
@@ -80,8 +88,20 @@ public class AvgTimeBenchmark<ITER_IN, ITER_OUT> implements Benchmark {
 
         private final List<Duration> pauseDurations;
 
+        private boolean isWarmup;
+        private boolean excludeResult;
+
         public IterationContext() {
             this.pauseDurations = new ArrayList<>();
+        }
+
+        public void pause(Runnable runnable) {
+            if (!isWarmup) {
+                long start = System.nanoTime();
+                runnable.run();
+                long time = System.nanoTime() - start;
+                pauseDurations.add(Duration.ofNanos(time));
+            }
         }
 
         public void jitAssert(Object result) {
@@ -122,6 +142,14 @@ public class AvgTimeBenchmark<ITER_IN, ITER_OUT> implements Benchmark {
                 .sum();
             return Math.round(pauseSum);
         }
+
+        public boolean isWarmup() {
+            return isWarmup;
+        }
+
+        public void exclueResult() {
+            this.excludeResult = true;
+        }
     }
 
     public static class Builder<I, O> {
@@ -130,9 +158,11 @@ public class AvgTimeBenchmark<ITER_IN, ITER_OUT> implements Benchmark {
         private BiFunction<I, IterationContext, O> testCase;
         private Function<Integer, I> dataProvider;
         private Runnable beforeTestCallback;
+        private Runnable afterWarmupCallback;
 
         public Builder() {
             this.beforeTestCallback = () -> { };
+            this.afterWarmupCallback = () -> { };
             this.dataProvider = i -> null;
         }
 
@@ -161,12 +191,18 @@ public class AvgTimeBenchmark<ITER_IN, ITER_OUT> implements Benchmark {
             return this;
         }
 
+        public Builder<I, O> afterWarmupCallback(Runnable afterWarmupCallback) {
+            this.afterWarmupCallback = afterWarmupCallback;
+            return this;
+        }
+
         public AvgTimeBenchmark<I, O> build() {
             return new AvgTimeBenchmark<>(warmUpIterations,
                 testCaseIterations,
                 testCase,
                 dataProvider,
-                beforeTestCallback);
+                beforeTestCallback,
+                afterWarmupCallback);
         }
     }
 }

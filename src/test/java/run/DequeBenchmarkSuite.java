@@ -1,13 +1,16 @@
 package run;
 
-import lib.AvgTimeBenchmark;
-import lib.ReportGenerator;
+import benchmark.AvgTimeBenchmark;
+import data.TestObject;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import report.CollectionReportGenerator;
 
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -19,11 +22,18 @@ public class DequeBenchmarkSuite {
 
     private static abstract class CommonSteps {
 
-        protected ReportGenerator report;
+        private static Instant createdAt;
+
+        protected CollectionReportGenerator report;
+
+        @BeforeAll
+        static void setUpAll() {
+            createdAt = Instant.now();
+        }
 
         @BeforeEach
         void setUp() {
-            report = new ReportGenerator(getDeque().getClass());
+            report = new CollectionReportGenerator(getDeque().getClass(), createdAt);
         }
 
         @AfterEach
